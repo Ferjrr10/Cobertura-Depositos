@@ -1,0 +1,83 @@
+import time, threading
+import gspread
+import pandas as pd
+import gspread_dataframe as gd
+import wget
+from datetime import date
+import os
+import xlrd
+
+
+
+Inf_dia = "https://www.bcra.gob.ar/Pdfs/PublicacionesEstadisticas/infomondia.xls" 
+Serie_dia = "https://www.bcra.gob.ar/Pdfs/PublicacionesEstadisticas/series.xlsm"  
+
+
+
+wget.download(Inf_dia, 'c:/users/user/Desktop/GSV2/infomondia.xls') 
+wget.download(Serie_dia, 'c:/users/user/Desktop/GSV2/series.xlsm')
+
+
+
+
+    #print(AL30D_end)
+    #service account access
+gc = gspread.service_account(filename="secret.json")
+    
+    #pre and production google sheet
+    #sh1 = gc.open("prueba")
+sh1 = gc.open("Ratio gd30/al30")
+sh = gc.open("Cartera 2")
+sh2 = gc.open("Cobertura")
+
+    #worksheet = sh1.add_worksheet(title="AL30D", rows="100", cols="20")
+    
+    #worksheet = sh1.worksheet('AL30D')
+    #once created only It will update the values
+workbook = xlrd.open_workbook('c:/users/user/Desktop/GSV2/infomondia.xls')
+#workbook1 = xlrd.open_workbook('c:/users/user/Desktop/Cobertura/series.xlsm')
+workbook1 = pd.read_excel('c:/users/user/Desktop/GSV2/series.xlsm')
+worksheet9 = workbook[2]
+excel_data_df = pd.read_excel('c:/users/user/Desktop/GSV2/series.xlsm', sheet_name='DEPOSITOS')
+#CUADRO 1 | TABLE 1 F40, F42
+
+
+EFECT_USD = worksheet9.cell(41, 5).value
+CC_USD = worksheet9.cell(39, 5).value
+fecha = worksheet9.cell(33, 5).value
+FECHA_DEP = excel_data_df.iat[5056,0]
+FECHA_DEP1 = excel_data_df.iat[5057,0]
+date1 = FECHA_DEP.date()
+
+#print(FECHA_DEP,FECHA_DEP1)
+
+Dep_tot = excel_data_df.iat[5056,25]
+Dep_tot_DP = excel_data_df.iat[5056,26]
+
+
+
+worksheet10 = sh2.worksheet('Resumen')
+
+date2 = worksheet10.cell(27, 5).value
+
+worksheet10.update("e1", str(date1))
+worksheet10.update("e3", EFECT_USD)
+worksheet10.update("e4", CC_USD)
+
+k = 5056
+i = 1
+
+while excel_data_df.iat[k+i,0] > excel_data_df.iat[k,0]: 
+    
+    
+    Dep_tot = excel_data_df.iat[k+i,25]
+    Dep_tot_DP = excel_data_df.iat[k+i,26]
+    worksheet10.update("e5", Dep_tot)
+    worksheet10.update("e6", Dep_tot_DP)
+    worksheet10.update("e1", str((excel_data_df.iat[5056+i,0]).date()))
+    print("depositos totales", Dep_tot, "depos prviados", Dep_tot_DP, "se actualizar los nuevos valores de la feche",str((excel_data_df.iat[5056+i,0]).date()))
+    i+=1
+    
+    
+os.remove("c:/users/user/Desktop/GSV2/infomondia.xls") 
+os.remove("c:/users/user/Desktop/GSV2/series.xlsm")
